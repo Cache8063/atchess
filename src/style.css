@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-chess-bg-primary text-chess-text-primary;
+  }
+}
+
+@layer components {
+  .chess-square {
+    @apply relative w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200;
+  }
+  
+  .chess-square-dark {
+    @apply bg-chess-board-dark;
+  }
+  
+  .chess-square-light {
+    @apply bg-chess-board-light;
+  }
+  
+  .chess-square-highlighted {
+    @apply ring-4 ring-chess-highlight-move ring-opacity-50;
+  }
+  
+  .chess-square-valid {
+    @apply after:content-[''] after:absolute after:w-3 after:h-3 after:bg-chess-highlight-valid after:rounded-full after:opacity-70;
+  }
+  
+  .chess-square-hover:hover {
+    @apply brightness-110;
+  }
+  
+  .chess-piece {
+    @apply select-none cursor-grab active:cursor-grabbing transition-transform duration-200;
+  }
+  
+  .chess-piece-dragging {
+    @apply opacity-50 scale-110;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-chess-accent-primary text-white rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-chess-bg-tertiary text-chess-text-primary rounded-lg hover:bg-opacity-80 transition-colors duration-200 font-medium border border-chess-board-border;
+  }
+  
+  .card {
+    @apply bg-chess-bg-secondary rounded-lg border border-chess-board-border p-4;
+  }
+  
+  .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50;
+  }
+  
+  .modal-content {
+    @apply bg-chess-bg-secondary rounded-lg p-6 max-w-md w-full mx-4 border border-chess-board-border;
+  }
+}
