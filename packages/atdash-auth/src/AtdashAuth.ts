@@ -263,6 +263,7 @@ export class AtdashAuth {
     // Create agent for the PDS
     if (session.pds) {
       this.agent = new BskyAgent({ service: session.pds.service })
+      // @ts-ignore - session property exists on agent
       this.agent.session = {
         did: session.did,
         handle: session.handle,
@@ -304,12 +305,13 @@ export class AtdashAuth {
         handle: this.session.handle,
         email: this.session.email,
         accessJwt: this.session.accessJwt,
-        refreshJwt: this.session.refreshJwt
-      })
+        refreshJwt: this.session.refreshJwt,
+        active: true
+      } as any)
       
       // Update session with new tokens
-      this.session.accessJwt = response.data.accessJwt
-      this.session.refreshJwt = response.data.refreshJwt
+      this.session.accessJwt = (response.data as any).accessJwt
+      this.session.refreshJwt = (response.data as any).refreshJwt
       
       await this.sessionStorage.saveSession(this.session)
       

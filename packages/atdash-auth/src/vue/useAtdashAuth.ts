@@ -1,4 +1,4 @@
-import { ref, computed, readonly, onMounted, onUnmounted, inject, App, InjectionKey } from 'vue'
+import { ref, computed, readonly, onMounted, onUnmounted, inject, App, InjectionKey, Ref, ComputedRef } from 'vue'
 import { AtdashAuth } from '../AtdashAuth'
 import { AtdashAuthConfig, AtdashSession, AtdashUser, LoginResult } from '../types'
 
@@ -6,23 +6,23 @@ export const ATDASH_AUTH_KEY: InjectionKey<AtdashAuth> = Symbol('atdash-auth')
 
 export interface UseAtdashAuthReturn {
   // State
-  session: Readonly<typeof session>
-  isAuthenticated: Readonly<typeof isAuthenticated>
-  user: Readonly<typeof user>
-  loading: Readonly<typeof loading>
-  error: Readonly<typeof error>
+  session: Readonly<Ref<AtdashSession | null>>
+  isAuthenticated: Readonly<ComputedRef<boolean>>
+  user: Readonly<ComputedRef<AtdashUser | null>>
+  loading: Readonly<Ref<boolean>>
+  error: Readonly<Ref<string | null>>
   
   // Methods
-  login: typeof login
-  loginWithOAuth: typeof loginWithOAuth
-  logout: typeof logout
-  logoutEverywhere: typeof logoutEverywhere
-  refreshSession: typeof refreshSession
-  checkSSO: typeof checkSSO
+  login: (identifier: string, password: string) => Promise<LoginResult>
+  loginWithOAuth: (handle?: string) => Promise<LoginResult>
+  logout: () => Promise<void>
+  logoutEverywhere: () => Promise<void>
+  refreshSession: () => Promise<boolean>
+  checkSSO: () => Promise<AtdashSession | null>
 }
 
 export function useAtdashAuth(): UseAtdashAuthReturn {
-  const auth = inject(ATDASH_AUTH_KEY)
+  const auth = inject(ATDASH_AUTH_KEY)!
   
   if (!auth) {
     throw new Error(

@@ -29,7 +29,8 @@ export {
   ATDASH_AUTH_KEY,
   type UseAtdashAuthReturn 
 } from './vue/useAtdashAuth'
-export { default as AuthBridge } from './vue/AuthBridge.vue'
+// Note: AuthBridge.vue should be imported directly in Vue apps
 
 // Default export
+import { AtdashAuth } from './AtdashAuth'
 export default AtdashAuth
