@@ -48,12 +48,22 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { useSettingsStore } from '@/stores/settings'
 import { useRouter } from 'vue-router'
 import { LogOut } from 'lucide-vue-next'
 
 const userStore = useUserStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
+
+onMounted(() => {
+  // Load settings from localStorage
+  settingsStore.loadFromLocalStorage()
+  // Check for existing session
+  userStore.checkSession()
+})
 
 const handleLogin = () => {
   router.push('/auth/login')

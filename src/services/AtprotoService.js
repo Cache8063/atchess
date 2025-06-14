@@ -1,27 +1,82 @@
 import { BskyAgent } from '@atproto/api'
+import { PDSDiscovery } from './PDSDiscovery'
 
 class AtprotoService {
   constructor() {
-    this.agent = new BskyAgent({ service: 'https://bsky.social' })
+    this.agent = null
     this.session = null
+    this.pdsInfo = null
+    this.pdsDiscovery = new PDSDiscovery()
     this.CLIENT_ID = 'com.chess.app'
     this.REDIRECT_URI = window.location.origin + '/auth/callback'
   }
 
   async login(identifier, password) {
     try {
+      // Discover PDS from handle
+      this.pdsInfo = await this.pdsDiscovery.fromHandle(identifier)
+      
+      // Create agent for the discovered PDS
+      this.agent = new BskyAgent({ service: this.pdsInfo.service })
+      
+      // Attempt login
       const response = await this.agent.login({ identifier, password })
       this.session = response.data
+      
+      // Save session with PDS info
       this.saveSession()
-      return { success: true, did: this.session.did }
+      
+      return { success: true, did: this.session.did, pds: this.pdsInfo }
     } catch (error) {
+      // If custom PDS fails, try Bluesky as fallback
+      if (this.pdsInfo?.type === 'custom') {
+        try {
+          this.pdsInfo = {
+            service: 'https://bsky.social',
+            type: 'bsky',
+            authEndpoint: 'https://bsky.social/xrpc',
+            apiEndpoint: 'https://bsky.social/xrpc'
+          }
+          this.agent = new BskyAgent({ service: this.pdsInfo.service })
+          const response = await this.agent.login({ identifier, password })
+          this.session = response.data
+          this.saveSession()
+          return { success: true, did: this.session.did, pds: this.pdsInfo }
+        } catch (fallbackError) {
+          return { success: false, error: fallbackError.message }
+        }
+      }
+      
       return { success: false, error: error.message }
     }
   }
 
-  async createSession() {
+  async createSession(handle) {
     const state = this.generateState()
     localStorage.setItem('oauth_state', state)
+    
+    // Discover PDS if handle provided
+    if (handle) {
+      this.pdsInfo = await this.pdsDiscovery.fromHandle(handle)
+      localStorage.setItem('pending_pds', JSON.stringify(this.pdsInfo))
+    } else {
+      // Default to Bluesky
+      this.pdsInfo = {
+        service: 'https://bsky.social',
+        type: 'bsky',
+        authEndpoint: 'https://bsky.social/xrpc'
+      }
+    }
+    
+    // OAuth is currently only supported by Bluesky
+    // For custom PDS, we'll need to use password auth
+    if (this.pdsInfo.type === 'custom') {
+      return { 
+        success: false, 
+        error: 'OAuth not supported for custom PDS. Please use password login.',
+        requiresPassword: true 
+      }
+    }
     
     const authUrl = `https://bsky.social/oauth/authorize?` +
       `client_id=${this.CLIENT_ID}&` +
@@ -269,7 +324,12 @@ class AtprotoService {
 
   saveSession() {
     if (this.session) {
-      localStorage.setItem('atproto_session', JSON.stringify(this.session))
+      const sessionData = {
+        session: this.session,
+        pds: this.pdsInfo,
+        savedAt: Date.now()
+      }
+      localStorage.setItem('atproto_session', JSON.stringify(sessionData))
     }
   }
 
@@ -277,8 +337,27 @@ class AtprotoService {
     const saved = localStorage.getItem('atproto_session')
     if (saved) {
       try {
-        this.session = JSON.parse(saved)
+        const sessionData = JSON.parse(saved)
+        
+        // Check if session is not too old (24 hours)
+        const age = Date.now() - (sessionData.savedAt || 0)
+        if (age > 24 * 60 * 60 * 1000) {
+          this.clearSession()
+          return false
+        }
+        
+        this.session = sessionData.session
+        this.pdsInfo = sessionData.pds || {
+          service: 'https://bsky.social',
+          type: 'bsky',
+          authEndpoint: 'https://bsky.social/xrpc',
+          apiEndpoint: 'https://bsky.social/xrpc'
+        }
+        
+        // Recreate agent with correct PDS
+        this.agent = new BskyAgent({ service: this.pdsInfo.service })
         this.agent.session = this.session
+        
         return true
       } catch {
         return false
@@ -287,10 +366,18 @@ class AtprotoService {
     return false
   }
 
+  clearSession() {
+    localStorage.removeItem('atproto_session')
+    localStorage.removeItem('pending_pds')
+  }
+
   logout() {
     this.session = null
-    this.agent.session = null
-    localStorage.removeItem('atproto_session')
+    this.pdsInfo = null
+    if (this.agent) {
+      this.agent.session = null
+    }
+    this.clearSession()
   }
 }
 

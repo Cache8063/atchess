@@ -48,7 +48,7 @@
             Flip Board
           </button>
           <button v-if="!gameStore.isGameOver" @click="offerDraw" class="btn-secondary w-full">
-            <Handshake class="w-4 h-4 inline mr-2" />
+            <Users class="w-4 h-4 inline mr-2" />
             Offer Draw
           </button>
           <button v-if="!gameStore.isGameOver" @click="resign" class="btn-secondary w-full text-chess-accent-error">
@@ -78,7 +78,7 @@ import { useUserStore } from '@/stores/user'
 import ChessBoard from '@/components/ChessBoard.vue'
 import PlayerCard from '@/components/PlayerCard.vue'
 import MoveHistory from '@/components/MoveHistory.vue'
-import { RotateCcw, Handshake, Flag, Plus } from 'lucide-vue-next'
+import { RotateCcw, Users, Flag, Plus } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()

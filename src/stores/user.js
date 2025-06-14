@@ -63,8 +63,8 @@ export const useUserStore = defineStore('user', {
       }
     },
     
-    async loginWithOAuth() {
-      await this.atprotoService.createSession()
+    async loginWithOAuth(handle) {
+      return await this.atprotoService.createSession(handle)
     },
     
     async handleOAuthCallback(code, state) {
@@ -166,17 +166,21 @@ export const useUserStore = defineStore('user', {
     },
     
     async checkSession() {
-      const hasSession = await this.atprotoService.loadSession()
-      
-      if (hasSession) {
-        const refreshed = await this.atprotoService.refreshSession()
+      try {
+        const hasSession = this.atprotoService.loadSession()
         
-        if (refreshed) {
-          const session = this.atprotoService.session
-          await this.loadProfile(session.did)
-          this.isAuthenticated = true
-          return true
+        if (hasSession) {
+          const refreshed = await this.atprotoService.refreshSession()
+          
+          if (refreshed) {
+            const session = this.atprotoService.session
+            await this.loadProfile(session.did)
+            this.isAuthenticated = true
+            return true
+          }
         }
+      } catch (error) {
+        console.error('Session check failed:', error)
       }
       
       return false
